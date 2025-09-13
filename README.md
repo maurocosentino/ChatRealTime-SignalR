@@ -1,6 +1,6 @@
 Aplicación de Chat Instantáneo usando SignalR y ASP.NET Core
 
-![Captura de pantalla del chat](images/Sala.png)\
+![Captura de pantalla del chat](images/sala.png)\
 
 ## Descripción
 
@@ -26,7 +26,7 @@ Desarrollado como parte de mi portfolio, este chat uso SignalR para conexiones e
 1. Clona el repositorio:
 
    ```
-   git clone https://github.com/tu-usuario/ChatRealTimePortfolio.git
+   git clone https://github.com/maurocosentino/ChatRealTimePortfolio.git
    cd ChatRealTimePortfolio
    ```
 
