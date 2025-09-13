@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat en Tiempo Real</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">Sala de Chat</h1>
+        <div class="mb-4">
+            <input id="usuarioInput" type="text" placeholder="Tu nombre" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input id="mensajeInput" type="text" placeholder="Escribe un mensaje..." class="w-full p-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button id="enviarBoton" class="w-full bg-blue-500 text-white p-2 mt-2 rounded-lg hover:bg-blue-600 transition">Enviar</button>
+        </div>
+        <ul id="mensajesLista" class="h-80 overflow-y-auto p-4 bg-gray-50 rounded-lg">
+            <!--mensajes-->
+        </ul>
+        <div id="listaUsuarios" class="mt-4 p-2 bg-gray-200 rounded-lg">
+            <!-- La lista de usuarios-->
+        </div>
+    </div>
+
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .build();
+
+        // Recibir y mostrar mensajes
+        connection.on("RecibirMensaje", (usuario, mensaje) => {
+            const li = document.createElement("li");
+            li.className = "mb-2 p-2 bg-blue-100 rounded-lg";
+            li.textContent = `${usuario}: ${mensaje}`;
+            document.getElementById("mensajesLista").appendChild(li);
+            // Auto-scroll al último mensaje
+            document.getElementById("mensajesLista").scrollTop = document.getElementById("mensajesLista").scrollHeight;
+        });
+
+        // Actualizar lista de usuarios cuando alguien se une
+        connection.on("UsuarioUnido", (usuarioNuevo, listaUsuarios) => {
+            actualizarListaUsuarios(listaUsuarios, `¡${usuarioNuevo} se unió al chat!`);
+        });
+
+        // Actualizar lista de usuarios cuando alguien se desconecta
+        connection.on("UsuarioDesconectado", (usuarioSalida, listaUsuarios) => {
+            actualizarListaUsuarios(listaUsuarios, `¡${usuarioSalida} se desconectó!`);
+        });
+
+        // Función para actualizar la lista de usuarios
+        function actualizarListaUsuarios(listaUsuarios, mensaje) {
+            const listaDiv = document.getElementById("listaUsuarios");
+            listaDiv.innerHTML = ''; // Limpia y actualiza
+            listaDiv.innerHTML = `
+                <h3 class="text-lg font-semibold">Usuarios en línea (${listaUsuarios.length}):</h3>
+                <ul>${listaUsuarios.map(u => `<li class="text-gray-700">${u}</li>`).join('')}</ul>
+                ${mensaje ? `<p class="text-sm text-gray-600 mt-2">${mensaje}</p>` : ''}
+            `;
+        }
+
+        // Iniciar conexión
+        connection.start().catch(err => console.error(err));
+
+        // Enviar mensaje al hacer clic
+        document.getElementById("enviarBoton").addEventListener("click", () => {
+            const usuario = document.getElementById("usuarioInput").value;
+            const mensaje = document.getElementById("mensajeInput").value;
+            if (usuario && mensaje) {
+                connection.invoke("EnviarMensaje", usuario, mensaje);
+                document.getElementById("mensajeInput").value = "";
+            }
+        });
+
+        // Unirse al chat al cargar la página
+        window.addEventListener('load', () => {
+            const usuario = document.getElementById("usuarioInput").value;
+            if (usuario) {
+                connection.invoke("UnirseAlChat", usuario).catch(err => console.error(err));
+            }
+        });
+
+        // Unirse al chat al cambiar el nombre
+        document.getElementById("usuarioInput").addEventListener("change", () => {
+            const usuario = document.getElementById("usuarioInput").value;
+            if (usuario) {
+                connection.invoke("UnirseAlChat", usuario).catch(err => console.error(err));
+            }
+        });
+    </script>
+</body>
+</html>
